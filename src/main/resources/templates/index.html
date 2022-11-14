@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" th:href="@{/fullcalendar-5.11.3/lib/main.css}"
+          href="/static/fullcalendar-5.11.3/lib/main.css">
+    <link rel="stylesheet" th:href="@{/bootstrap-5.2.2-dist/css/bootstrap.min.css}"
+          href="/static/bootstrap-5.2.2-dist/css/bootstrap.min.css">
+    <link rel="stylesheet" th:href="@{/bootstrap-icons-1.9.1/bootstrap-icons.css}"
+          href="/static/bootstrap-icons-1.9.1/bootstrap-icons.css">
+
+    <title>TestIndex</title>
+
+    <style>
+        #calendar {
+            width: 90%;
+        }
+    </style>
+</head>
+<body>
+<div class="container text-center">
+    <div id="calendar"></div>
+</div>
+
+<div class="modal fade" id="dateModal">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dateModalTitle">2022-11-10 파티 일정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group" id="dateEvents">
+                    <template id="dateEventItems">
+                        <li class="list-group-item">
+                            <div class="d-inline-block align-middle">
+                                <a class="link-primary text-decoration-none" href="#"
+                                   onclick="openModal('eventModal', this)">15:00 발탄 하드 숙련</a>
+                            </div>
+                            <i class="bi bi-backspace text-danger float-end d-inline-block fs-5"
+                               style="cursor: pointer"></i>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnCreateParty"
+                        data-bs-toggle="popover" data-bs-placement="right"
+                        data-bs-content-id="eventCreatePopover" data-mc-date=""
+                        onclick="changePopoverDisplay(this)">파티 만들기
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="eventModal">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">파티 상세정보</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="eventDateTime">2022-11-01 21:00</p>
+                <p id="eventTitle">아브렐슈드 노말 반숙</p>
+                <p id="eventRequestBy">신청자 : <a class="link-primary">개발하다샷건침</a></p>
+                <div class="row">
+                    <div class="col-6">
+                        <p>참가자</p>
+                        <ul class="list-group" id="eventMembers">
+                            <template id="eventMemberItems">
+                                <li class="list-group-item">
+                                    <a>개발하다샷건침</a> <span>딜러</span>
+                                    <i class="bi bi-backspace text-danger float-end d-inline-block fs-5"
+                                       style="cursor: pointer" data-mc-memberId="-1" data-mc-eventId="-1"></i>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                    <div class="col-6 p-2">
+                        <p>비고</p>
+                        <span id="eventComment">비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnJoinParty"
+                        data-bs-toggle="popover" data-bs-placement="right"
+                        data-bs-content-id="eventJoinPopover" onclick="changePopoverDisplay(this)">참가 신청
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="eventCreatePopover" class="d-none">
+    <form action="#" id="eventCreatePopoverForm" name="eventCreatePopoverForm">
+        <div class="input-group mb-1">
+            <span class="input-group-text">레이드</span>
+            <input type="text" class="form-control" name="content" id="inputEventContent" required
+                   placeholder="발탄, 비아키스, 아브 1-4, 아브 1-6...">
+        </div>
+        <div class="input-group mb-1">
+            <span class="input-group-text">난이도</span>
+            <input type="text" class="form-control" name="difficulty" id="inputEventDifficulty" placeholder="노말, 하드, 헬">
+        </div>
+        <div class="input-group mb-1">
+            <span class="input-group-text">숙련도</span>
+            <input type="text" class="form-control" name="partyType" id="inputEventPartyType"
+                   placeholder="학원, 트라이, 숙련, 무관...">
+        </div>
+        <div class="input-group mb-1 d-none">
+            <span class="input-group-text" disabled="true">날짜</span>
+            <input type="date" name="eventDate" id="inputEventDate" class="form-control" required value="2020-10-10">
+        </div>
+        <div class="input-group mb-1">
+            <span class="input-group-text">시간</span>
+            <input type="time" name="eventTime" id="inputEventTime" required class="form-control">
+        </div>
+        <div class="input-group mb-1">
+            <span class="input-group-text">신청자</span>
+            <input type="text" class="form-control" name="requestBy" required id="inputEventRequestBy"
+                   placeholder="참여캐릭이 아닌 본캐명">
+        </div>
+        <div class="input-group mb-1">
+            <span class="input-group-text">희망 포지션</span>
+            <input type="text" class="form-control" name="position" required id="inputEventPosition"
+                   placeholder="딜, 폿, 딜/폿">
+        </div>
+        <div class="input-group mb-1">
+            <span class="input-group-text">비고</span>
+            <textarea class="form-control" name="comment" id="inputEventComment" cols="30" rows="10"></textarea>
+        </div>
+        <div class="d-flex flex-row-reverse btn-group">
+            <button type="button" class="btn btn-outline-secondary" onclick="createGuildEvent()">등록</button>
+        </div>
+    </form>
+</div>
+
+<div id="eventJoinPopover" class="d-none">
+    <div class="input-group mb-1 d-none">
+        <span class="input-group-text"></span>
+        <input type="text" class="form-control" id="inputJoinId" required name="eventId">
+    </div>
+    <div class="input-group mb-1">
+        <span class="input-group-text">이름</span>
+        <input type="text" class="form-control" id="inputJoinName" required name="name" placeholder="참여캐릭이 아닌 본캐명">
+    </div>
+    <div class="input-group mb-1">
+        <span class="input-group-text">희망 포지션</span>
+        <input type="text" class="form-control" id="inputJoinPosition" required name="position" placeholder="딜, 폿, 딜/폿">
+    </div>
+    <div class="d-flex flex-row-reverse btn-group ">
+        <button type="button" class="btn btn-outline-secondary" onclick="joinParty()">등록</button>
+    </div>
+</div>
+
+</body>
+<script th:src="@{/fullcalendar-5.11.3/lib/main.js}" src="/static/fullcalendar-5.11.3/lib/main.js"></script>
+<script th:src="@{/bootstrap-5.2.2-dist/js/bootstrap.bundle.min.js}"
+        src="/static/bootstrap-5.2.2-dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/moment.js}" src="/static/js/moment.js"></script>
+<script th:src="@{/js/mc-ajax-util.js}" src="/static/js/mc-ajax-util.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/@fullcalendar/moment@5.5.0/main.global.min.js'></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const dateData = /*[[${data}]]*/ {
+        "2022-11-10": {
+            events: [
+                {
+                    requestBy: "개발하다샷건침",
+                    difficulty: "노말",
+                    eventDate: "2022-11-10",
+                    eventId: 1,
+                    eventTime: "21:00:00",
+                    members: [{
+                        memberId: 100,
+                        name: "개발하다샷건침",
+                        position: "딜"
+                    }, {
+                        memberId: 101,
+                        name: "마크해",
+                        position: "폿"
+                    }, {
+                        memberId: 102,
+                        name: "헤망",
+                        position: "딜/폿"
+                    }],
+                    partyType: "반숙",
+                    content: "아브렐슈드",
+                    comment: "비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트 "
+                },
+                {
+                    requestBy: "개발하다샷건침",
+                    difficulty: "하드",
+                    eventDate: "2022-11-10",
+                    eventId: 2,
+                    eventTime: "15:00:00",
+                    members: [],
+                    partyType: "숙련",
+                    content: "발탄"
+                },
+                {
+                    requestBy: "개발하다샷건침",
+                    difficulty: null,
+                    eventDate: "2022-11-10",
+                    eventId: 3,
+                    eventTime: "19:00:00",
+                    members: [],
+                    partyType: null,
+                    content: "길드 이벤트"
+                }
+            ],
+            date: "2022-11-10"
+        }
+    };
+    /*]]*/
+
+    let calendar;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initFullCalendar();
+        addWeeklyGuildContent();
+        initPopovers();
+        addExistEvents();
+    });
+
+    function initFullCalendar() {
+        let calendarDiv = document.getElementById("calendar");
+        calendar = new FullCalendar.Calendar(calendarDiv, {
+            titleFormat: "YYYY년 MM월",
+            headerToolbar: {
+                start: "title",
+                center: "",
+                end: "today prev,next dayGridMonth,dayGridWeek"
+            },
+            buttonText: {
+                today: "오늘",
+                month: "월별보기",
+                week: "주별보기",
+            },
+            initialView: 'dayGridMonth',
+            dayMaxEvents: true,
+            expandRows: true,
+        });
+
+        calendar.on("dateClick", (dateInfo) => openModal("dateModal", dateInfo));
+        calendar.on("eventClick", (event) => openModal("eventModal", event))
+        calendar.render();
+    }
+
+    function addWeeklyGuildContent() {
+        let guildContent = {
+            groupId: "gc",
+            title: "길드 컨텐츠",
+            daysOfWeek: [0],
+            startTime: "21:10:00",
+            startRecur: new Date(),
+            extendedProps: {
+                requestBy: "엄마가로아하지말래요",
+                members: [],
+                comment: "점령전 + 섬멸전. 9시 컨텐츠 끝나고 진행합니다!\n" +
+                    "길드컨텐츠는 별도 참가신청없이 시간에 맞춰 입장하시면 됩니다!"
+            }
+        }
+        calendar.addEvent(guildContent)
+    }
+
+    function openModal(type, data) {
+        if (type === "dateModal") {
+            openDateModal(data);
+        } else {
+            openEventModal(data);
+        }
+
+        let modalEl = document.getElementById(type);
+        let modal = new bootstrap.Modal(modalEl, {
+            backdrop: "static",
+            focus: false
+        });
+
+        modal.toggle();
+    }
+
+    function openDateModal(data) {
+        let events = getSelectedDateEvents(data);
+        setDateModalTitle(data.date);
+
+        let eventListEl = document.getElementById("dateEvents");
+        eventListEl.innerHTML = "";
+
+        if (events.length === 0) {
+            let p = document.createElement("p");
+            p.innerText = "이 날짜에 만들어진 파티가 없습니다";
+            eventListEl.appendChild(p);
+        } else {
+            events.forEach(event => addEventList(event, eventListEl))
+        }
+
+        document.getElementById("btnCreateParty").setAttribute("data-mc-date", moment(data.date).format("YYYY-MM-DD"));
+    }
+
+    function getSelectedDateEvents(data) {
+        return calendar.getEvents().filter(event => {
+            let targetDate = moment(data.date);
+            let eventDate = moment(event.start);
+
+            return targetDate.format("YYYY-MM-DD") === eventDate.format("YYYY-MM-DD");
+        }).sort((event1, event2) => event1.start - event2.start);
+    }
+
+    function setDateModalTitle(selectedDate) {
+        let formattedDate = moment(selectedDate).format("YYYY-MM-DD");
+        document.getElementById("dateModalTitle").innerText = `${formattedDate} 파티 일정`;
+    }
+
+    function addEventList(event, eventListEl) {
+        let id = event.id;
+        let title = event.title;
+        let eventTime = moment(event.start).format("HH:mm");
+
+        eventListEl.innerHTML +=
+            `<li class="list-group-item">
+                <div class="d-inline-block align-middle">
+                    <a class="link-primary text-decoration-none" href="#" onclick="openModal('eventModal', this)"
+                    data-mc-eventId="${id}">${eventTime} ${title}</a>
+                </div>
+                <i class="bi bi-backspace text-danger float-end d-inline-block fs-5" style="cursor: pointer"></i>
+            </li>`;
+    }
+
+    function openEventModal(data) {
+        let eventId;
+
+        if (data.hasOwnProperty("event")) {
+            eventId = data.event.id;
+        } else {
+            eventId = data.getAttribute("data-mc-eventId");
+        }
+
+        let event = calendar.getEventById(eventId);
+        setEventModalData(event);
+    }
+
+    function setEventModalData(event) {
+        if (event.title === "길드 컨텐츠") {
+            document.getElementById("eventDateTime").innerText = "매주 저녁 9시10분";
+        } else {
+            document.getElementById("eventDateTime").innerText = moment(event.start).format("YYYY-MM-DD HH:mm");
+        }
+        document.getElementById("eventTitle").innerText = event.title;
+        document.getElementById("eventRequestBy").innerHTML = `신청자 : <a class="link-primary text-decoration-none">${event.extendedProps.requestBy}</a>`
+
+        let membersEl = document.getElementById("eventMembers");
+        membersEl.innerText = "";
+
+        event.extendedProps.members.forEach(addJoinedMember(membersEl, event.id));
+
+        document.getElementById("eventComment").innerText = event.extendedProps.comment !== undefined ? event.extendedProps.comment : "";
+        document.getElementById("btnJoinParty").setAttribute("data-mc-eventId", event.id);
+    }
+
+    function addJoinedMember(membersEl, eventId) {
+        return ({memberId, name, position}) => {
+            let itemTemplate =
+                `<li class="list-group-item">
+                    <a>${name}</a>
+                    <span>${position}</span>
+                    <i class="bi bi-backspace text-danger float-end d-inline-block fs-5" style="cursor: pointer"
+                    data-mc-memberId="${memberId}" data-mc-eventId="${eventId}" onclick="removeMember(this)"></i>
+                </li>`;
+            membersEl.innerHTML += itemTemplate;
+        };
+    }
+
+    function initPopovers() {
+        let popovers = document.querySelectorAll("[data-bs-toggle='popover']");
+        [...popovers].map(pop => {
+            let allowList = bootstrap.Tooltip.Default.allowList;
+            allowList.input = ['type', 'value']
+
+            let options = {sanitize: false};
+
+            if (pop.hasAttribute('data-bs-content-id')) {
+                options.content = document.getElementById(pop.getAttribute('data-bs-content-id'));
+                options.html = true;
+            }
+
+            new bootstrap.Popover(pop, options);
+        });
+    }
+
+    function addExistEvents() {
+        Object.keys(dateData).forEach((key) => {
+            dateData[key].events.forEach((event) => {
+                addEvent(event);
+            })
+        })
+    }
+
+    function addEvent(event) {
+        let formatDate = (date) => {
+            return date.format("YYYY-MM-DDTHH:mm:ss");
+        }
+
+        let startTime = moment(`${event.eventDate}T${event.eventTime}`);
+        let fullCalendarEventFormat = {
+            id: event.eventId,
+            title: `${event.content} ${event.difficulty != null ? event.difficulty : ""} ${event.partyType != null ? event.partyType : ""}`.trim(),
+            start: formatDate(startTime),
+            end: formatDate(startTime.clone().add(1, 's')),
+            allDay: false,
+            extendedProps: {
+                requestBy: event.requestBy,
+                content: event.content,
+                difficulty: `${event.difficulty != null ? event.difficulty : ""}`,
+                partyType: `${event.partyType != null ? event.partyType : ""}`,
+                members: event.members,
+                comment: event.comment
+            }
+        }
+
+        calendar.addEvent(fullCalendarEventFormat);
+    }
+
+    function changePopoverDisplay(target) {
+        let popoverEl = document.getElementById(target.getAttribute("data-bs-content-id"));
+        if (popoverEl) {
+            popoverEl.classList.remove("d-none")
+        }
+    }
+
+    document.addEventListener("shown.bs.popover", ({target}) => {
+        let popoverId = target.getAttribute("data-bs-content-id");
+
+        if (popoverId === "eventCreatePopover") {
+            clearPopoverData();
+            document.getElementById("inputEventDate").value = target.getAttribute("data-mc-date");
+        } else if (popoverId === "eventJoinPopover") {
+            document.getElementById("inputJoinId").value = document.getElementById("btnJoinParty").getAttribute("data-mc-eventId");
+        }
+    })
+
+    function clearPopoverData() {
+        document.getElementById("inputEventContent").value = "";
+        document.getElementById("inputEventDifficulty").value = "";
+        document.getElementById("inputEventPartyType").value = "";
+        document.getElementById("inputEventTime").value = "";
+        document.getElementById("inputEventRequestBy").value = "";
+        document.getElementById("inputEventPosition").value = "";
+        document.getElementById("inputEventComment").value = "";
+    }
+
+    function createGuildEvent() {
+        let formData = Array.from(document.querySelectorAll("[id^='inputEvent']"));
+        let flag = true;
+        let requestData = {};
+
+        formData.filter(data => {
+            requestData[data.name] = data.value;
+            return data.hasAttribute("required")
+        }).forEach(data => {
+            if (checkValidValue(data.value)) {
+                data.classList.remove("border-danger");
+            } else {
+                flag = false;
+                data.classList.add("border-danger");
+            }
+        });
+
+        if (flag) {
+            let httpRequest = createHttpRequest("POST", "/createEvent");
+            httpRequest.send(JSON.stringify(requestData));
+            ajaxOnload(httpRequest, (response) => {
+                addEvent(response.result);
+                let instance = bootstrap.Modal.getInstance("#dateModal");
+                instance.toggle();
+                alert("파티 생성에 성공하였습니다.");
+            });
+        }
+    }
+
+    function joinParty() {
+        let formData = Array.from(document.querySelectorAll("[id^='inputJoin']"));
+        let flag = true;
+        let requestData = {};
+
+        formData.filter(data => {
+            requestData[data.name] = data.value;
+            return data.hasAttribute("required")
+        }).forEach(data => {
+            if (checkValidValue(data.value)) {
+                data.classList.remove("border-danger");
+            } else {
+                flag = false;
+                data.classList.add("border-danger");
+            }
+        });
+
+        if (flag) {
+            let httpRequest = createHttpRequest("POST", "/joinEvent");
+            httpRequest.send(JSON.stringify(requestData));
+            ajaxOnload(httpRequest, (response) => {
+                addMember(response.result);
+                alert("파티 참가에 성공하였습니다.");
+            });
+        }
+    }
+
+    function addMember({eventId, memberId, name, position}) {
+        let event = calendar.getEventById(eventId);
+        event.extendedProps.members.push({
+            memberId: memberId,
+            name: name,
+            position: position
+        });
+
+        addJoinedMember(document.getElementById("eventMembers"), eventId)({memberId, name, position})
+    }
+
+    function removeMember(event) {
+        if (!confirm("정말 해당 유저를 삭제하시겠습니까?")) {
+            return
+        }
+
+        let data = {
+            eventId: event.getAttribute("data-mc-eventId"),
+            memberId: event.getAttribute("data-mc-memberId")
+        }
+
+        let httpRequest = createHttpRequest("POST", "/removeMember");
+        httpRequest.send(JSON.stringify(data));
+        ajaxOnload(httpRequest, (response) => {
+            let calendarEvent = calendar.getEventById(data.eventId);
+            let propMembers = calendarEvent.extendedProps.members;
+            propMembers.splice(propMembers.findIndex(member => member.memberId === response.result.memberId), 1);
+            document.getElementById("eventMembers").removeChild(event.parentNode);
+        })
+    }
+
+    function checkValidValue(value) {
+        return !!value;
+    }
+</script>
+</html>
