@@ -20,9 +20,11 @@ public class EventQueryService {
         Map<LocalDate, DateDto> map = new HashMap<>();
 
         events.forEach(event -> {
-            if (hasMember(event)) {
-                event.setMembers(new ArrayList<>());
-            }
+            event.getMembers().forEach(memberDto -> {
+                if (memberDto.getMemberId() == null) {
+                    event.getMembers().remove(memberDto);
+                }
+            });
 
             LocalDate key = event.getEventDate();
             if (map.containsKey(key)) {
@@ -46,9 +48,5 @@ public class EventQueryService {
     private LocalDate createEndLocalDate(LocalDate now) {
         LocalDate endMonth = now.plusMonths(1);
         return endMonth.withDayOfMonth(endMonth.lengthOfMonth());
-    }
-
-    private boolean hasMember(EventDto event) {
-        return event.getMembers().size() == 1 && Objects.isNull(event.getMembers().get(0).getMemberId());
     }
 }
