@@ -41,7 +41,7 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
     public List<EventDto> findAllDtoByEventDateBetween(LocalDate start, LocalDate end) {
         return queryFactory
                 .from(event)
-                .join(event.members, member)
+                .leftJoin(event.members, member)
                 .where(event.eventDate.between(start, end))
                 .transform(
                         groupBy(event.eventDate).list(
