@@ -2,15 +2,13 @@ package com.momc.momc.service;
 
 import com.momc.momc.model.dto.DateDto;
 import com.momc.momc.model.dto.EventDto;
+import com.momc.momc.model.dto.MemberDto;
 import com.momc.momc.repository.JPAEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Service
@@ -23,7 +21,10 @@ public class EventQueryService {
         Map<LocalDate, DateDto> map = new HashMap<>();
 
         events.forEach(event -> {
-            if (event.getMembers() == null) {
+            if (!Objects.isNull(event.getMembers())) {
+                List<MemberDto> members = event.getMembers();
+                members.removeIf(member -> null == member.getMemberId());
+            } else {
                 event.setMembers(new ArrayList<>());
             }
 
