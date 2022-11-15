@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.momc.momc.model.dto.EventDto;
 import com.momc.momc.model.dto.QEventDto;
 import com.momc.momc.model.dto.QMemberDto;
-import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,17 +40,22 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
 
     public List<EventDto> findAllDtoByEventDateBetween(LocalDate start, LocalDate end) {
         return queryFactory
-                .select(
-                        new QEventDto(event.eventId, event.requestBy, event.content,
-                                event.difficulty, event.partyType, event.eventDate,
-                                event.eventTime, event.comment,
-                                list(new QMemberDto(
-                                        member.id.as("memberId"),
-                                        member.name.as("name"),
-                                        member.position.as("position")
-                                ))))
                 .from(event)
                 .leftJoin(event.members, member)
-                .where(event.eventDate.between(start, end)).fetch();
+                .where(event.eventDate.between(start, end))
+                .transform(
+                        groupBy(event.eventId).list(new QEventDto(
+                                        event.eventId, event.requestBy, event.content,
+                                        event.difficulty, event.partyType, event.eventDate,
+                                        event.eventTime, event.comment,
+                                        list(new QMemberDto(
+                                                        member.id.as("memberId"),
+                                                        member.name.as("name"),
+                                                        member.position.as("position")
+                                                )
+                                        )
+                                )
+                        )
+                );
     }
 }
