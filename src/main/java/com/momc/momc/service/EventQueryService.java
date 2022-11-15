@@ -7,7 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @Service
@@ -20,11 +23,9 @@ public class EventQueryService {
         Map<LocalDate, DateDto> map = new HashMap<>();
 
         events.forEach(event -> {
-            event.getMembers().forEach(memberDto -> {
-                if (memberDto.getMemberId() == null) {
-                    event.getMembers().remove(memberDto);
-                }
-            });
+            if (event.getMembers() == null) {
+                event.setMembers(new ArrayList<>());
+            }
 
             LocalDate key = event.getEventDate();
             if (map.containsKey(key)) {
