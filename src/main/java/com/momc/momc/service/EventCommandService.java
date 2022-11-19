@@ -5,13 +5,11 @@ import com.momc.momc.entity.Member;
 import com.momc.momc.model.dto.EventDto;
 import com.momc.momc.model.form.CreateEventForm;
 import com.momc.momc.model.form.JoinEventForm;
-import com.momc.momc.model.form.RemoveUserForm;
 import com.momc.momc.repository.EventRepository;
 import com.momc.momc.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +18,7 @@ public class EventCommandService {
     private final EventRepository eventRepository;
     private final MemberRepository memberRepository;
 
+    @Transactional
     public EventDto createEvent(CreateEventForm form) {
         Event newEvent = new Event.Builder()
                 .requestBy(form.getRequestBy())
@@ -39,6 +38,7 @@ public class EventCommandService {
         return EventDto.convertEventToDto(newEvent);
     }
 
+    @Transactional
     public void joinEvent(JoinEventForm form) {
         Event event = eventRepository.findById(form.getEventId()).orElseThrow(RuntimeException::new);
         Member member = new Member(form.getName(), form.getPosition());
@@ -48,8 +48,16 @@ public class EventCommandService {
         form.setMemberId(member.getId());
     }
 
-    public void removeMember(RemoveUserForm form) {
-        Member member = memberRepository.findById(form.getMemberId()).orElseThrow(RuntimeException::new);
+    @Transactional
+    public void removeMember(Long memberId) {
+        Member member = memberRepository.findById(memberId).orElseThrow(RuntimeException::new);
         memberRepository.delete(member);
+    }
+
+    @Transactional
+    public void deleteEvent(Long eventId) {
+        Event event = eventRepository.findById(eventId).orElseThrow(RuntimeException::new);
+        memberRepository.deleteAllByEvent(event);
+        eventRepository.delete(event);
     }
 }

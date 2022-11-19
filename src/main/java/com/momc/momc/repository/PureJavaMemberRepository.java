@@ -1,5 +1,6 @@
 package com.momc.momc.repository;
 
+import com.momc.momc.entity.Event;
 import com.momc.momc.entity.Member;
 
 import java.lang.reflect.Field;
@@ -7,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class PureJavaMemberRepository implements MemberRepository {
 
@@ -45,5 +47,12 @@ public class PureJavaMemberRepository implements MemberRepository {
                 .findFirst();
 
         result.ifPresent(value -> repository.remove(value));
+    }
+
+    @Override
+    public void deleteAllByEvent(Event event) {
+        List<Member> collect = repository.stream().filter(member -> member.getEvent().equals(event))
+                .collect(Collectors.toList());
+        repository.removeAll(collect);
     }
 }

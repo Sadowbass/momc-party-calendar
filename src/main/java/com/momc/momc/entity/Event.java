@@ -50,6 +50,15 @@ public class Event {
         member.joinEvent(this);
     }
 
+    public void changeEventData(String content, String difficulty, String partyType, LocalDate eventDate, LocalTime eventTime, String comment) {
+        this.content = content;
+        this.difficulty = difficulty;
+        this.partyType = partyType;
+        this.eventDate = eventDate;
+        this.eventTime = eventTime;
+        this.comment = comment;
+    }
+
     public void addAllMember(Member... members) {
         Arrays.stream(members).forEach(this::addMember);
     }

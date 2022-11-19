@@ -1,5 +1,6 @@
 package com.momc.momc.repository;
 
+import com.momc.momc.entity.Event;
 import com.momc.momc.entity.Member;
 
 import java.util.List;
@@ -14,4 +15,6 @@ public interface MemberRepository {
     List<Member> findAll();
 
     void delete(Member member);
+
+    void deleteAllByEvent(Event event);
 }

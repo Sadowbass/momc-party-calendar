@@ -81,11 +81,35 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p id="eventDateTime">2022-11-01 21:00</p>
-                <p id="eventTitle">아브렐슈드 노말 반숙</p>
+                <div class="row mb-3">
+                    <p id="eventDateTime" class="col" style="margin-bottom: 14px">2022-11-01 21:00</p>
+                    <div class="input-group modifyDiv col" style="width: 60%">
+                        <input type="date" class="form-control" id="inputModifyDate" name="eventDate" required>
+                        <input type="time" class="form-control" id="inputModifyTime" name="eventTime" required>
+                    </div>
+                    <button type="button" class="btn btn-outline-info float-end col-auto" id="btnModifyEvent"
+                            onclick="modifyParty('eventId')">파티 수정
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <p id="eventTitle" style="margin-bottom: 14px; height: 38px">아브렐슈드 노말 반숙</p>
+                    <div class="modifyDiv row">
+                        <div class="col input-group">
+                            <input type="text" class="form-control" placeholder="레이드" id="inputModifyContent"
+                                   name="content" required>
+                            <input type="text" class="form-control" placeholder="난이도" id="inputModifyDifficulty"
+                                   name="difficulty">
+                            <input type="text" class="form-control" placeholder="숙련도" id="inputModifyPartyType"
+                                   name="partyType">
+                        </div>
+                        <button type="button" class="btn btn-outline-warning col-auto" onclick="hideModifyForm()">수정
+                            취소
+                        </button>
+                    </div>
+                </div>
                 <p id="eventRequestBy">신청자 : <a class="link-primary">개발하다샷건침</a></p>
-                <div class="row">
-                    <div class="col-6">
+                <div class="row" style="height: 13rem">
+                    <div class="col-6 p-2">
                         <p>참가자</p>
                         <ul class="list-group" id="eventMembers">
                             <template id="eventMemberItems">
@@ -99,7 +123,12 @@
                     </div>
                     <div class="col-6 p-2">
                         <p>비고</p>
-                        <span id="eventComment">비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트</span>
+                        <textarea id="eventComment" class="form-control" cols="30" rows="6"
+                                  style="resize: none; background-color:#fff;" disabled>비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트 비고텍스트</textarea>
+                        <div class="modifyDiv">
+                            <textarea id="inputModifyComment" class="form-control" cols="30" rows="6"
+                                      style="resize: none" name="comment"></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -108,7 +137,9 @@
                         data-bs-toggle="popover" data-bs-placement="right"
                         data-bs-content-id="eventJoinPopover" onclick="changePopoverDisplay(this)">참가 신청
                 </button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                <button type="button" class="btn btn-danger float-end" id="btnDeleteEvent"
+                        onclick="deleteParty(-1)">파티 삭제
+                </button>
             </div>
         </div>
     </div>
@@ -360,17 +391,26 @@
         }
 
         let event = calendar.getEventById(eventId);
+        hideModifyForm();
         setEventModalData(event);
     }
 
     function setEventModalData(event) {
+        let momentEventDate = moment(event.start);
+        let modifyDivs = document.querySelectorAll("div.modifyDiv");
+        [...modifyDivs].forEach(div => div.classList.add("d-none"));
+
         if (event.title === "길드 컨텐츠") {
             document.getElementById("eventDateTime").innerText = "매주 저녁 9시10분";
         } else {
-            document.getElementById("eventDateTime").innerText = moment(event.start).format("YYYY-MM-DD HH:mm");
+            document.getElementById("eventDateTime").innerHTML =
+                `${momentEventDate.format("YYYY-MM-DD HH:mm")}`;
+            document.getElementById("btnModifyEvent").setAttribute("onclick", `modifyParty(${event.id})`);
         }
+
         document.getElementById("eventTitle").innerText = event.title;
-        document.getElementById("eventRequestBy").innerHTML = `신청자 : <a class="link-primary text-decoration-none">${event.extendedProps.requestBy}</a>`
+        document.getElementById("eventRequestBy").innerHTML =
+            `신청자 : <a class="link-primary text-decoration-none">${event.extendedProps.requestBy}</a>`
 
         let membersEl = document.getElementById("eventMembers");
         membersEl.innerText = "";
@@ -379,6 +419,7 @@
 
         document.getElementById("eventComment").innerText = event.extendedProps.comment !== undefined ? event.extendedProps.comment : "";
         document.getElementById("btnJoinParty").setAttribute("data-mc-eventId", event.id);
+        document.getElementById("btnDeleteEvent").setAttribute("onclick", `deleteParty(${event.id})`);
     }
 
     function addJoinedMember(membersEl, eventId) {
@@ -473,24 +514,10 @@
     }
 
     function createGuildEvent() {
-        let formData = Array.from(document.querySelectorAll("[id^='inputEvent']"));
-        let flag = true;
-        let requestData = {};
-
-        formData.filter(data => {
-            requestData[data.name] = data.value;
-            return data.hasAttribute("required")
-        }).forEach(data => {
-            if (checkValidValue(data.value)) {
-                data.classList.remove("border-danger");
-            } else {
-                flag = false;
-                data.classList.add("border-danger");
-            }
-        });
+        let {flag, requestData} = validAndCreateRequestData("inputEvent")
 
         if (flag) {
-            let httpRequest = createHttpRequest("POST", "/createEvent");
+            let httpRequest = createHttpRequest("POST", "/events");
             httpRequest.send(JSON.stringify(requestData));
             ajaxOnload(httpRequest, (response) => {
                 addEvent(response.result);
@@ -502,24 +529,10 @@
     }
 
     function joinParty() {
-        let formData = Array.from(document.querySelectorAll("[id^='inputJoin']"));
-        let flag = true;
-        let requestData = {};
-
-        formData.filter(data => {
-            requestData[data.name] = data.value;
-            return data.hasAttribute("required")
-        }).forEach(data => {
-            if (checkValidValue(data.value)) {
-                data.classList.remove("border-danger");
-            } else {
-                flag = false;
-                data.classList.add("border-danger");
-            }
-        });
+        let {flag, requestData} = validAndCreateRequestData("inputJoin");
 
         if (flag) {
-            let httpRequest = createHttpRequest("POST", "/joinEvent");
+            let httpRequest = createHttpRequest("POST", `/events/${requestData.eventId}/members`);
             httpRequest.send(JSON.stringify(requestData));
             ajaxOnload(httpRequest, (response) => {
                 addMember(response.result);
@@ -549,14 +562,99 @@
             memberId: event.getAttribute("data-mc-memberId")
         }
 
-        let httpRequest = createHttpRequest("POST", "/removeMember");
-        httpRequest.send(JSON.stringify(data));
+        let httpRequest = createHttpRequest("DELETE", `/events/${data.eventId}/members/${data.memberId}`);
+        httpRequest.send(null);
         ajaxOnload(httpRequest, (response) => {
             let calendarEvent = calendar.getEventById(data.eventId);
             let propMembers = calendarEvent.extendedProps.members;
-            propMembers.splice(propMembers.findIndex(member => member.memberId === response.result.memberId), 1);
+            propMembers.splice(propMembers.findIndex(member => member.memberId === data.memberId), 1);
             document.getElementById("eventMembers").removeChild(event.parentNode);
+            alert("유저 참가가 취소되었습니다.")
         })
+    }
+
+    function modifyParty(eventId) {
+        if (document.getElementById("btnModifyEvent").getAttribute("active")) {
+            let {flag, requestData} = validAndCreateRequestData("inputModify");
+            if (flag) {
+                let httpRequest = createHttpRequest("PUT", `/events/${eventId}`);
+                httpRequest.send(JSON.stringify(requestData));
+                ajaxOnload(httpRequest, (response) => {
+                    calendar.getEventById(eventId).remove();
+                    addEvent(response.result);
+                    setEventModalData(calendar.getEventById(eventId));
+                    alert("파티 수정이 완료되었습니다.");
+                })
+                hideModifyForm();
+            }
+        } else {
+            showModifyForm(eventId)
+        }
+    }
+
+    function showModifyForm(eventId) {
+        let event = calendar.getEventById(eventId);
+        let momentEventDate = moment(event.start);
+
+        document.querySelectorAll("div.modifyDiv").forEach(div => div.classList.remove("d-none"));
+        document.getElementById("eventDateTime").classList.add("d-none");
+        document.getElementById("eventTitle").classList.add("d-none");
+        document.getElementById("eventComment").classList.add("d-none");
+
+        document.getElementById("inputModifyDate").value = momentEventDate.format("YYYY-MM-DD");
+        document.getElementById("inputModifyTime").value = momentEventDate.format("HH:mm");
+        document.getElementById("inputModifyContent").value = event.extendedProps.content;
+        document.getElementById("inputModifyDifficulty").value = event.extendedProps.difficulty;
+        document.getElementById("inputModifyPartyType").value = event.extendedProps.partyType;
+        document.getElementById("inputModifyComment").value = event.extendedProps.comment;
+        document.getElementById("btnModifyEvent").setAttribute("active", "true");
+    }
+
+    function hideModifyForm() {
+        document.querySelectorAll("div.modifyDiv").forEach(div => div.classList.add("d-none"));
+        document.getElementById("eventDateTime").classList.remove("d-none");
+        document.getElementById("eventTitle").classList.remove("d-none");
+        document.getElementById("eventComment").classList.remove("d-none");
+
+        document.getElementById("btnModifyEvent").removeAttribute("active");
+    }
+
+    function deleteParty(eventId) {
+        if (!confirm("정말 파티를 삭제하시겠습니까?")) {
+            return;
+        }
+
+        let httpRequest = createHttpRequest("DELETE", `/events/${eventId}`);
+        httpRequest.send(null);
+        ajaxOnload(httpRequest, (response) => {
+            calendar.getEventById(eventId).remove();
+            alert("파티 삭제가 완료되었습니다.");
+            let instance = bootstrap.Modal.getInstance("#eventModal");
+            instance.toggle();
+        })
+    }
+
+    function validAndCreateRequestData(startWith) {
+        let formData = Array.from(document.querySelectorAll(`[id^='${startWith}']`));
+        let flag = true;
+        let requestData = {};
+
+        formData.filter(data => {
+            requestData[data.name] = data.value;
+            return data.hasAttribute("required")
+        }).forEach(data => {
+            if (checkValidValue(data.value)) {
+                data.classList.remove("border-danger");
+            } else {
+                flag = false;
+                data.classList.add("border-danger");
+            }
+        });
+
+        return {
+            "flag": flag,
+            "requestData": requestData
+        }
     }
 
     function checkValidValue(value) {
