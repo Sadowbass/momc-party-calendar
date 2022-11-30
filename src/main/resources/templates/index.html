@@ -279,6 +279,7 @@
 
     function initFullCalendar() {
         let calendarDiv = document.getElementById("calendar");
+        let deviceWidth = window.innerWidth || document.body.clientWidth
         calendar = new FullCalendar.Calendar(calendarDiv, {
             titleFormat: "YYYY년 MM월",
             headerToolbar: {
@@ -291,7 +292,7 @@
                 month: "월별보기",
                 week: "주별보기",
             },
-            initialView: 'dayGridMonth',
+            initialView: deviceWidth >= 768 ? 'dayGridMonth' : 'dayGridWeek',
             dayMaxEvents: true,
             expandRows: true,
         });
