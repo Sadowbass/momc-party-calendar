@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 public class MultiConnectorConfig {
 
     @Bean
-    public ServletWebServerFactory servletcontainer() {
+    public ServletWebServerFactory servletContainer() {
         TomcatServletWebServerFactory tomcatServletWebServerFactory = new TomcatServletWebServerFactory() {
             @Override
             protected void postProcessContext(Context context) {
